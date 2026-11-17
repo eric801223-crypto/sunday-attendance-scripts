@@ -10,5 +10,8 @@
 | annual_attendance.py | 近一年出席分析（規則 V1.1） |
 | verify_annual.py | 近一年分析回測 |
 | notion_page_pdf.py | Notion 頁面 PDF（兩者共用） |
+| care_html.py＋care_html_template.html | 關心名單互動版 HTML（以近12週為主） |
+| annual_html.py＋annual_html_template.html | 近一年分析互動版 HTML |
+| combine_html.py | 兩個互動版合成一個檔案（兩個分頁） |
 
-修改規則時，規則文件、程式與回測程式需同步更新本儲存庫與專案，並重跑回測確認通過。
+互動版 HTML 的程式需與同名範本放在同一個資料夾。修改規則時，規則文件、程式與回測程式需同步更新本儲存庫與專案，並重跑回測確認通過。

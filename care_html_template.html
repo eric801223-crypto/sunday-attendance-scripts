@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>參考優先關心名單｜對照近一年</title>
+<style>
+.viz-root{
+  color-scheme:light;
+  --bg:#f6f5f2; --surface:#fcfcfb; --border:#e4e2dc; --grid:#ecebe6;
+  --text:#0b0b0b; --text2:#52514e; --muted:#8a8984;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s7:#6250d6;
+  --lv0:#1c5cab; --lv1:#5598e7; --lv2:#9ec5f4; --lv3:#d6d4cd;
+  --pos:#2a78d6; --neg:#e34948; --mid:#f0efec;
+  --band:#f1f0ec; --warn-bg:#fdecec; --warn:#b42318; --chip:#ffffff; --chip-on:#0b0b0b; --chip-on-text:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+  .viz-root{
+    color-scheme:dark;
+    --bg:#121211; --surface:#1a1a19; --border:#2e2e2b; --grid:#2a2a27;
+    --text:#f0efec; --text2:#c3c2b7; --muted:#8f8e86;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s7:#9085e9;
+    --lv0:#86b6ef; --lv1:#3987e5; --lv2:#1c5cab; --lv3:#45453f;
+    --pos:#3987e5; --neg:#e66767; --mid:#383835;
+    --band:#222220; --warn-bg:#3a1d1b; --warn:#ff9b8f; --chip:#1f1f1d; --chip-on:#f0efec; --chip-on-text:#121211;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0}
+.viz-root{background:var(--bg);color:var(--text);min-height:100vh;
+  font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;font-size:15px;line-height:1.6}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:22px;margin:0 0 4px;font-weight:700}
+.meta{color:var(--text2);font-size:13.5px}
+.badge{display:inline-block;background:var(--warn-bg);color:var(--warn);font-weight:700;font-size:12.5px;padding:2px 10px;border-radius:999px;margin-left:8px;vertical-align:3px}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 8px;margin:10px 0 4px;border-bottom:1px solid var(--border)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--border);background:var(--chip);color:var(--text);border-radius:999px;padding:4px 12px;font-size:13.5px;cursor:pointer;font-family:inherit}
+.chip:hover{border-color:var(--text2)}
+.chip.on{background:var(--chip-on);color:var(--chip-on-text);border-color:var(--chip-on)}
+.chip .n{color:var(--muted);margin-left:4px;font-size:12px}
+.chip.on .n{color:inherit;opacity:.7}
+.note{color:var(--muted);font-size:12.5px;margin-top:6px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.kpi .k{color:var(--text2);font-size:12.5px}
+.kpi .v{font-size:22px;font-weight:700;margin:2px 0;font-variant-numeric:tabular-nums}
+.kpi .s{color:var(--muted);font-size:12.5px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 16px 12px;margin:14px 0}
+.card h2{font-size:16.5px;margin:0 0 2px}
+.card .sub{color:var(--text2);font-size:13px;margin-bottom:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--text2);margin:4px 0 6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend i.line{height:3px;border-radius:2px;vertical-align:3px;width:16px}
+svg text{fill:var(--text2);font-size:12px;font-family:inherit}
+svg .axis{stroke:var(--border)} svg .gridl{stroke:var(--grid)}
+.tip{position:fixed;pointer-events:none;background:var(--surface);color:var(--text);border:1px solid var(--border);
+  box-shadow:0 4px 16px rgba(0,0,0,.12);border-radius:8px;padding:8px 10px;font-size:13px;z-index:20;display:none;max-width:280px}
+.tip b{font-variant-numeric:tabular-nums}
+.drill{margin-top:8px;border-top:1px dashed var(--border);padding-top:8px;display:none}
+.drill h3{font-size:14px;margin:0 0 6px}
+.drill .x{float:right;cursor:pointer;color:var(--muted);font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--grid);text-align:left;white-space:nowrap}
+th{color:var(--text2);font-weight:600;font-size:12.5px;cursor:pointer;user-select:none}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+.lvl{display:inline-block;width:24px;text-align:center;border-radius:4px;margin-right:2px;font-size:12px;font-variant-numeric:tabular-nums}
+.heat td{text-align:center;font-variant-numeric:tabular-nums;cursor:pointer}
+.heat td.rh{text-align:left;cursor:pointer;color:var(--text)}
+.heat tr.on td.rh{font-weight:700}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.grid2 .card{margin:0}
+input.search{border:1px solid var(--border);background:var(--chip);color:var(--text);border-radius:8px;padding:5px 10px;font-family:inherit;font-size:13.5px;width:160px}
+.foot{color:var(--muted);font-size:12.5px;margin-top:20px}
+.hit{cursor:pointer}
+.tabs{display:flex;gap:4px;margin:14px 0 0;border-bottom:1px solid var(--border)}
+.tab{border:none;background:none;color:var(--text2);font-family:inherit;font-size:14.5px;padding:8px 14px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--text);font-weight:700;border-bottom-color:var(--text)}
+.tab .n{color:var(--muted);font-size:12px;margin-left:4px}
+.rk{display:inline-block;min-width:22px;text-align:center;color:#fff;border-radius:5px;font-size:12px;font-weight:700;padding:0 4px}
+.tp{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;white-space:nowrap}
+.tp i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.star{color:#c0392b;font-weight:700}
+.wk{color:#2e7d32;font-size:12px}
+.filt{display:inline-flex;align-items:center;gap:6px;background:var(--warn-bg);color:var(--warn);border-radius:999px;padding:3px 10px;font-size:13px}
+.filt b{cursor:pointer}
+.heat th.ch{cursor:pointer}
+.heat td.z{color:var(--muted)}
+.heat td.sel{outline:2px solid var(--text);outline-offset:-2px}
+details{font-size:13px;color:var(--text2);margin-top:8px}
+details summary{cursor:pointer}
+.why{color:var(--muted);font-size:12.5px}
+.heat th.ch{white-space:normal;min-width:60px;vertical-align:bottom}
+</style>
+</head>
+<body>
+<div class="viz-root">
+<div class="wrap">
+  <h1>參考優先關心名單｜互動版 <span class="badge">內部參考，不對外轉發</span></h1>
+  <div class="meta" id="meta"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="bar">
+    <div class="chips" id="units"></div>
+    <div class="note" id="tabNote"></div>
+  </div>
+
+  <div class="card" id="ovCard">
+    <h2>本週概況</h2>
+    <div class="sub" id="ovSub"></div>
+    <div id="ov"></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <span id="filt"></span>
+      <span id="toggles" class="chips"></span>
+      <input class="search" id="search" placeholder="搜尋姓名">
+    </div>
+    <div class="note" id="listNote" style="margin-top:6px"></div>
+    <div id="blocks"></div>
+  </div>
+
+  <div class="foot">
+    名單與數據只作關懷參考，不推定聖徒屬靈光景或個人意願，不據以評價區或個人。＊只表示點名系統中近一季沒有小排、家聚會紀錄，不代表沒有其他接觸。<br>
+    本頁不重新分類，類別、人數與＊都取自已通過回測的關心名單 Excel；產出前已核對各區各類別人數、＊人數、青職與大專人數與 Excel 相同。點開個人看到的近一年參考取自近一年分析 Excel，並註明其製表日期。
+  </div>
+</div>
+<div class="tip" id="tip"></div>
+</div>
+<script>
+const D = /*DATA*/;
+const $ = id => document.getElementById(id);
+const RC = k => k <= 2 ? '#c0392b' : k <= 4 ? '#d37814' : k <= 8 ? '#168078' : '#70608c';
+const R = k => D.rdef[k];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const TDEF = D.seg.length ? {'留住': D.seg[0] + '常來，' + D.seg[3] + '仍常來，近一個月有來',
+  '常來但近一個月沒來': D.seg[3] + '仍算常來，但近一個月都沒來',
+  '下滑': D.seg[0] + '常來，' + D.seg[3] + '變不常來', '淡出': D.seg[0] + '常來，' + D.seg[3] + '都沒來',
+  '回升': D.seg[0] + '不常來或沒來，' + D.seg[3] + '變常來', '年中開始出現': '這一年中間才第一次出席（新人、遷入或久未出席後回來）',
+  '一直不常來': D.seg[0] + '、' + D.seg[3] + '都是不常來或沒來'} : {};
+let tab = 'care', unit = '全部', fCat = null, onlyStar = false, onlyWeek = false;
+const open = new Set();
+
+const TABS = {
+  care: {label: '參考優先關心名單', note: '同各區卡片上的名單；依類別排列，每個類別寫明意思與條件。'},
+  near: {label: '接近穩定（內部）', note: '12週來6～8次、沒有連續缺席3週以上，再多來一兩次就達到出席穩定。只供負責弟兄參考。'},
+  contact: {label: '主日沒來但有小排家聚會（內部）', note: '近12週主日都沒來、近一年主日不到6次（因此不在關心名單上），但近一季小排或家聚會有紀錄，可邀請來主日。只供負責弟兄參考。'}
+};
+function inUnit(p, u) { if (u === '全部') return true; if (u === '青職') return p.group === '青職'; if (u === '大專') return p.group === '大學'; return p.area === u; }
+const base = () => D[tab].filter(p => inUnit(p, unit));
+const thisWeek = p => (p.rank === 5 || p.rank === 6) && p.k === 0;
+
+const tip = $('tip');
+function showTip(e, h) { tip.innerHTML = h; tip.style.display = 'block'; moveTip(e); }
+function moveTip(e) { const w = tip.offsetWidth, h = tip.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14; if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14; tip.style.left = x + 'px'; tip.style.top = y + 'px'; }
+function bindTips(root) { root.querySelectorAll('[data-tip]').forEach(el => { el.onmouseenter = e => showTip(e, el.dataset.tip); el.onmousemove = moveTip; el.onmouseleave = () => tip.style.display = 'none'; }); }
+
+function renderTabs() {
+  $('tabs').innerHTML = Object.entries(TABS).map(([k, v]) => '<button class="tab' + (k === tab ? ' on' : '') + '" data-k="' + k + '">' + v.label + '<span class="n">' + D[k].length + '</span></button>').join('');
+  $('tabs').querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.k; fCat = null; onlyStar = onlyWeek = false; renderAll(); });
+  $('tabNote').textContent = TABS[tab].note + '青職、大專為跨區，依群組篩選。';
+}
+function renderUnits() {
+  const us = ['全部'].concat(D.areas, ['青職', '大專']);
+  $('units').innerHTML = us.map(u => '<button class="chip' + (u === unit ? ' on' : '') + '" data-u="' + u + '">' + u + (u === '青職' || u === '大專' ? '（跨區）' : '') + '<span class="n">' + D[tab].filter(p => inUnit(p, u)).length + '</span></button>').join('');
+  $('units').querySelectorAll('.chip').forEach(b => b.onclick = () => { unit = b.dataset.u; fCat = null; renderAll(); });
+}
+
+/* 本週概況：各類別人數長條 */
+function renderOv() {
+  $('ovCard').style.display = tab === 'care' ? '' : 'none';
+  if (tab !== 'care') return;
+  const ps = base(), mx = Math.max(1, ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(k => ps.filter(p => p.rank === k).length));
+  const st = ps.filter(p => p.star).length, wk = ps.filter(thisWeek).length;
+  $('ovSub').textContent = (unit === '全部' ? '全部' : unit) + '共 ' + ps.length + ' 人；其中＊（小排、家聚會近一季也沒有紀錄）' + st + ' 人，總出席低但本週有出席 ' + wk + ' 人。點一列只看該類別。';
+  let h = '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,38%) 54px;gap:6px 12px;align-items:center">';
+  for (let k = 1; k <= 9; k++) {
+    const list = ps.filter(p => p.rank === k), n = list.length, s = list.filter(p => p.star).length;
+    h += '<div class="hit ovr" data-k="' + k + '" style="border-left:4px solid ' + RC(k) + ';padding-left:8px' + (fCat === k ? ';font-weight:700' : '') + '"><div style="color:var(--text)">' + R(k).name + '</div><div class="note" style="margin:0">' + R(k).plain + '</div></div>';
+    h += '<div class="hit ovr" data-k="' + k + '"><div style="height:14px;width:' + Math.max(n ? 2 : 0, n / mx * 100) + '%;background:' + RC(k) + ';border-radius:0 4px 4px 0;opacity:' + (fCat && fCat !== k ? .35 : 1) + '"></div></div>';
+    h += '<div class="num" style="text-align:right;font-variant-numeric:tabular-nums"><b>' + n + '</b>人' + (s ? '<div class="note" style="margin:0">＊' + s + '</div>' : '') + '</div>';
+  }
+  $('ov').innerHTML = h + '</div>';
+  $('ov').querySelectorAll('.ovr').forEach(el => el.onclick = () => { const k = +el.dataset.k; fCat = fCat === k ? null : k; renderOv(); renderBlocks(); });
+}
+
+/* 12週出席格 */
+function weeks12(d) {
+  let s = '', x = 0;
+  for (let i = 0; i < 12; i++) {
+    if (i === 8) x += 6;
+    const on = d[i] === '1', last = i === 11;
+    s += '<rect x="' + x + '" y="2" width="14" height="16" rx="3" fill="' + (on ? 'var(--lv0)' : 'var(--surface)') + '" stroke="' + (on ? 'var(--lv0)' : 'var(--border)') + '" stroke-width="' + (last ? 2 : 1) + '" data-tip="' + D.dates[i] + (on ? ' 有來' : ' 沒來') + (last ? '（本週）' : '') + '"/>';
+    x += 17;
+  }
+  return '<svg width="' + (x) + '" height="22" style="vertical-align:middle">' + s + '</svg>';
+}
+function annLine(p) {
+  if (!D.amade) return '<span class="why">本次未附近一年分析。</span>';
+  const a = p.a;
+  if (!a) return '<span class="why">近一年參考（' + D.amade + ' 製表）：' + esc(p.why) + '。</span>';
+  return '近一年參考（' + D.amade + ' 製表）：<b>' + a.type + '</b>——' + TDEF[a.type] + '。各段次數 ' + D.seg.map((s, i) => s + ' ' + a.s[i] + '次').join('、') + '；近一年主日共 ' + a.year + ' 次。' + (D.amade !== D.made ? '<span class="why">（與本名單製表日期不同，僅供參考）</span>' : '');
+}
+function row(p) {
+  const key = tab + p.ord, isOpen = open.has(key);
+  let h = '<tr class="hit pr" data-key="' + key + '"><td>' + (p.star ? '<span class="star" data-tip="近一季小排、家聚會也都沒有紀錄">＊</span>' : '') + '<b>' + esc(p.name) + '</b>' + (thisWeek(p) ? ' <span class="wk">（本週有出席）</span>' : '') + '</td><td>' + esc(p.area) + '</td><td>' + esc(p.group) + '</td>';
+  if (tab !== 'contact') h += '<td>' + weeks12(p.d12) + '</td><td class="num">' + p.n12 + '</td><td class="num">' + p.n4w + '</td><td class="num">' + (p.k ? p.k + '週' : '—') + '</td>';
+  if (tab !== 'near') h += '<td class="num">' + p.gq + '／' + p.hq + '</td><td class="num">' + p.gm + '／' + p.hm + '</td>';
+  h += '<td style="color:var(--muted)">' + (isOpen ? '收起 ▲' : '近一年 ▼') + '</td></tr>';
+  if (isOpen) h += '<tr><td colspan="12" style="white-space:normal;background:var(--band);font-size:13px">' + annLine(p) + '</td></tr>';
+  return h;
+}
+function table(list) {
+  let h = '<div class="scroll"><table><tr><th>姓名</th><th>區</th><th>群組</th>';
+  if (tab !== 'contact') h += '<th>近12週主日（左舊右新，最後4格＝近一個月）</th><th class="num">12週</th><th class="num">近4週</th><th class="num">連續缺席</th>';
+  if (tab !== 'near') h += '<th class="num">小排／家聚會<br>近一季</th><th class="num">小排／家聚會<br>近一個月</th>';
+  return h + '<th></th></tr>' + list.map(row).join('') + '</table></div>';
+}
+function block(color, title, n, plain, cond, list) {
+  return '<div style="margin-top:18px;border-left:5px solid ' + color + ';padding-left:12px"><div style="font-size:16px;font-weight:700;color:' + color + '">' + title + '（' + n + '人）</div><div style="color:var(--text)">' + plain + '</div>' + (cond ? '<div class="note" style="margin:0 0 6px">' + cond + '</div>' : '') + table(list) + '</div>';
+}
+function renderBlocks() {
+  const q = $('search').value.trim();
+  let ps = base();
+  if (onlyStar) ps = ps.filter(p => p.star);
+  if (onlyWeek) ps = ps.filter(thisWeek);
+  if (q) ps = ps.filter(p => p.name.includes(q));
+  ps.sort((a, b) => a.ord - b.ord);
+  $('filt').innerHTML = fCat ? '<span class="filt">只看：' + R(fCat).name + ' <b id="clr">✕</b></span>' : '';
+  if (fCat) $('clr').onclick = () => { fCat = null; renderOv(); renderBlocks(); };
+  $('toggles').innerHTML = tab === 'care' ? '<button class="chip' + (onlyStar ? ' on' : '') + '" id="tgS">只看＊（小排家聚會也沒有紀錄）</button><button class="chip' + (onlyWeek ? ' on' : '') + '" id="tgW">只看總出席低但本週有出席</button>' : '';
+  if (tab === 'care') { $('tgS').onclick = () => { onlyStar = !onlyStar; renderBlocks(); }; $('tgW').onclick = () => { onlyWeek = !onlyWeek; renderBlocks(); }; }
+  $('listNote').textContent = '點一個人可展開近一年參考。' + (tab !== 'contact' ? '出席格滑過可看日期；最右一格（粗框）是本週。' : '');
+  let h = '';
+  if (tab === 'care') {
+    for (let k = 1; k <= 9; k++) {
+      if (fCat && fCat !== k) continue;
+      const list = ps.filter(p => p.rank === k); if (!list.length) continue;
+      h += block(RC(k), R(k).name, list.length, R(k).plain, '條件：' + R(k).cond, list);
+    }
+  } else if (tab === 'near') {
+    [['本週有來', '出席普通，這週有來', '12週來6～8次，這週有來'], ['最近缺席（第3順位）', '出席普通，最近一兩週沒來（同關心名單「出席普通者近期缺席」）', '12週來6～8次，最近一兩週沒來']].forEach(([st, plain, cond]) => {
+      const list = ps.filter(p => p.state === st); if (list.length) h += block('#2a78d6', '接近穩定：' + st.replace('（第3順位）', ''), list.length, plain, '條件：' + cond, list);
+    });
+  } else {
+    if (ps.length) h += block('#6250d6', '主日沒來但有小排家聚會', ps.length, '近12週主日都沒來，但近一季小排或家聚會有紀錄，可邀請來主日', '條件：近12週主日0次、近一年主日未達6次，近一季小排或家聚會有紀錄', ps);
+  }
+  $('blocks').innerHTML = h || '<div class="note" style="margin-top:12px">沒有符合的人。</div>';
+  bindTips($('blocks'));
+  $('blocks').querySelectorAll('tr.pr').forEach(tr => tr.onclick = e => { const k = tr.dataset.key; open.has(k) ? open.delete(k) : open.add(k); renderBlocks(); });
+}
+$('search').addEventListener('input', renderBlocks);
+function renderAll() { renderTabs(); renderUnits(); renderOv(); renderBlocks(); }
+$('meta').textContent = '製表日期：' + D.made + '｜統計期間：' + D.period + (D.amade ? '｜近一年參考：' + D.amade + ' 製表' : '');
+renderAll();
+</script>
+</body>
+</html>
