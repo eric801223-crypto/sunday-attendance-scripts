@@ -125,7 +125,7 @@ details summary{cursor:pointer}
 
   <div class="foot">
     名單與數據只作關懷參考，不推定聖徒屬靈光景或個人意願，不據以評價區或個人。＊只表示點名系統中近一季沒有小排、家聚會紀錄，不代表沒有其他接觸。<br>
-    本頁不重新分類，類別、人數與＊都取自已通過回測的關心名單 Excel；產出前已核對各區各類別人數、＊人數、青職與大專人數與 Excel 相同。點開個人看到的近一年參考取自近一年分析 Excel，並註明其製表日期。
+    本頁不重新分類，類別、人數與＊都取自已通過回測的關心名單 Excel；產出前已核對各區各類別人數、＊人數、青職與大專人數與 Excel 相同。有附近一年分析時，點開個人看到的近一年參考取自同一次的近一年分析 Excel，並註明其製表日期。
   </div>
 </div>
 <div class="tip" id="tip"></div>
@@ -206,18 +206,18 @@ function annLine(p) {
 }
 function row(p) {
   const key = tab + p.ord, isOpen = open.has(key);
-  let h = '<tr class="hit pr" data-key="' + key + '"><td>' + (p.star ? '<span class="star" data-tip="近一季小排、家聚會也都沒有紀錄">＊</span>' : '') + '<b>' + esc(p.name) + '</b>' + (thisWeek(p) ? ' <span class="wk">（本週有出席）</span>' : '') + '</td><td>' + esc(p.area) + '</td><td>' + esc(p.group) + '</td>';
+  let h = '<tr class="' + (D.amade ? 'hit ' : '') + 'pr" data-key="' + key + '"><td>' + (p.star ? '<span class="star" data-tip="近一季小排、家聚會也都沒有紀錄">＊</span>' : '') + '<b>' + esc(p.name) + '</b>' + (thisWeek(p) ? ' <span class="wk">（本週有出席）</span>' : '') + '</td><td>' + esc(p.area) + '</td><td>' + esc(p.group) + '</td>';
   if (tab !== 'contact') h += '<td>' + weeks12(p.d12) + '</td><td class="num">' + p.n12 + '</td><td class="num">' + p.n4w + '</td><td class="num">' + (p.k ? p.k + '週' : '—') + '</td>';
   if (tab !== 'near') h += '<td class="num">' + p.gq + '／' + p.hq + '</td><td class="num">' + p.gm + '／' + p.hm + '</td>';
-  h += '<td style="color:var(--muted)">' + (isOpen ? '收起 ▲' : '近一年 ▼') + '</td></tr>';
-  if (isOpen) h += '<tr><td colspan="12" style="white-space:normal;background:var(--band);font-size:13px">' + annLine(p) + '</td></tr>';
+  h += (D.amade ? '<td style="color:var(--muted)">' + (isOpen ? '收起 ▲' : '近一年 ▼') + '</td>' : '') + '</tr>';
+  if (isOpen && D.amade) h += '<tr><td colspan="12" style="white-space:normal;background:var(--band);font-size:13px">' + annLine(p) + '</td></tr>';
   return h;
 }
 function table(list) {
   let h = '<div class="scroll"><table><tr><th>姓名</th><th>區</th><th>群組</th>';
   if (tab !== 'contact') h += '<th>近12週主日（左舊右新，最後4格＝近一個月）</th><th class="num">12週</th><th class="num">近4週</th><th class="num">連續缺席</th>';
   if (tab !== 'near') h += '<th class="num">小排／家聚會<br>近一季</th><th class="num">小排／家聚會<br>近一個月</th>';
-  return h + '<th></th></tr>' + list.map(row).join('') + '</table></div>';
+  return h + (D.amade ? '<th></th>' : '') + '</tr>' + list.map(row).join('') + '</table></div>';
 }
 function block(color, title, n, plain, cond, list) {
   return '<div style="margin-top:18px;border-left:5px solid ' + color + ';padding-left:12px"><div style="font-size:16px;font-weight:700;color:' + color + '">' + title + '（' + n + '人）</div><div style="color:var(--text)">' + plain + '</div>' + (cond ? '<div class="note" style="margin:0 0 6px">' + cond + '</div>' : '') + table(list) + '</div>';
@@ -233,7 +233,7 @@ function renderBlocks() {
   if (fCat) $('clr').onclick = () => { fCat = null; renderOv(); renderBlocks(); };
   $('toggles').innerHTML = tab === 'care' ? '<button class="chip' + (onlyStar ? ' on' : '') + '" id="tgS">只看＊（小排家聚會也沒有紀錄）</button><button class="chip' + (onlyWeek ? ' on' : '') + '" id="tgW">只看總出席低但本週有出席</button>' : '';
   if (tab === 'care') { $('tgS').onclick = () => { onlyStar = !onlyStar; renderBlocks(); }; $('tgW').onclick = () => { onlyWeek = !onlyWeek; renderBlocks(); }; }
-  $('listNote').textContent = '點一個人可展開近一年參考。' + (tab !== 'contact' ? '出席格滑過可看日期；最右一格（粗框）是本週。' : '');
+  $('listNote').textContent = (D.amade ? '點一個人可展開近一年參考。' : '') + (tab !== 'contact' ? '出席格滑過可看日期；最右一格（粗框）是本週。' : '');
   let h = '';
   if (tab === 'care') {
     for (let k = 1; k <= 9; k++) {
@@ -250,7 +250,7 @@ function renderBlocks() {
   }
   $('blocks').innerHTML = h || '<div class="note" style="margin-top:12px">沒有符合的人。</div>';
   bindTips($('blocks'));
-  $('blocks').querySelectorAll('tr.pr').forEach(tr => tr.onclick = e => { const k = tr.dataset.key; open.has(k) ? open.delete(k) : open.add(k); renderBlocks(); });
+  if (D.amade) $('blocks').querySelectorAll('tr.pr').forEach(tr => tr.onclick = e => { const k = tr.dataset.key; open.has(k) ? open.delete(k) : open.add(k); renderBlocks(); });
 }
 $('search').addEventListener('input', renderBlocks);
 function renderAll() { renderTabs(); renderUnits(); renderOv(); renderBlocks(); }
