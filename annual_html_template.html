@@ -98,7 +98,7 @@ input.search{border:1px solid var(--border);background:var(--chip);color:var(--t
 
   <div class="card">
     <h2 id="flowTitle"></h2>
-    <div class="sub">每一條是最早一季同一等級的人，色塊顏色是他們最近一季的等級；條越長人越多。點色塊可看是哪些人。年中才開始出現的人，最早一季多半落在「沒來」。</div>
+    <div class="sub">每一條是最早一季同一等級的人，色塊顏色是他們最近一季的等級；條越長人越多。點色塊可看是哪些人。第二季以後才開始出現的人，最早一季都落在「沒來」。</div>
     <div class="legend" id="flowLegend"></div>
     <div id="flow"></div>
     <div class="drill" id="flowDrill"></div>
@@ -116,7 +116,7 @@ input.search{border:1px solid var(--border);background:var(--chip);color:var(--t
 
   <div class="grid2">
     <div class="card">
-      <h2>年中開始出現的人</h2>
+      <h2>本區間第二季以後才開始出現的人</h2>
       <div class="sub">依出現後12週有沒有小排或家聚會紀錄分兩組；點色塊可看名單。</div>
       <div class="legend" id="newLegend"></div>
       <div id="newc"></div>
@@ -141,7 +141,7 @@ input.search{border:1px solid var(--border);background:var(--chip);color:var(--t
   </div>
 
   <div class="foot">
-    資料限制：報表是匯出當下的名單，年中已從系統刪除的人不在報表內；年中遷入者會列在「年中開始出現」；點名漏登會被當成缺席。數字只用來提出值得了解的問題，不判定原因，不據以評價區、負責弟兄或個人。<br>
+    資料限制：報表是匯出當下的名單，年中已從系統刪除的人不在報表內；第二季以後遷入者會列在「本區間第二季以後才開始出現」；點名漏登會被當成缺席。數字只用來提出值得了解的問題，不判定原因，不據以評價區、負責弟兄或個人。<br>
     本頁數字取自已通過回測的 Excel，未重新分類；產出前已核對每週人數、前後季對照、增減拆解、主日×小排家聚會與 Excel 相同。
   </div>
 </div>
@@ -230,7 +230,7 @@ function decOf(ps) {
   return {a: a / 12, b: b / 12, d: (b - a) / 12, by};
 }
 function retention(ps) {
-  const c0 = ps.filter(p => isCommon(p.s[0]));  // 與 Excel 前後季對照相同：依第1段等級，含第1段已常來的年中開始出現者
+  const c0 = ps.filter(p => isCommon(p.s[0]));  // 與 Excel 前後季對照相同：依第1段等級
   const kept = c0.filter(p => isCommon(p.s[3]));
   return {n: c0.length, k: kept.length};
 }
@@ -238,14 +238,14 @@ function renderKPI() {
   const ps = PU(), d = decOf(ps), r = retention(ps), rAll = retention(D.people.filter(p => !p.child));
   const pct = d.a ? d.d / d.a * 100 : 0;
   const cnt = t => ps.filter(p => p.type === t).length;
-  const nw = ps.filter(p => p.type === '年中開始出現');
+  const nw = ps.filter(p => p.type === '本區間第二季以後才開始出現');
   const done = nw.filter(p => p.new && p.new.status !== '觀察中');
   const stab = done.filter(p => p.new.status === '已穩定連結').length;
   const tiles = [
     ['平均每週人數', fmt1(d.a) + ' → ' + fmt1(d.b), SEG[0] + ' → ' + SEG[3] + '（' + (pct >= 0 ? '＋' : '－') + Math.abs(pct).toFixed(0) + '％）'],
     ['最早一季常來，最近仍常來', r.n ? Math.round(r.k / r.n * 100) + '％' : '—', r.k + '／' + r.n + '人' + (unit !== '全會所' ? '；全會所 ' + Math.round(rAll.k / rAll.n * 100) + '％' : '')],
     ['下滑／淡出', cnt('下滑') + '／' + cnt('淡出') + '人', '常來但近一個月沒來 ' + cnt('常來但近一個月沒來') + '人'],
-    ['年中開始出現', nw.length + '人', '滿12週者已穩定連結 ' + stab + '／' + done.length + '人']
+    ['本區間第二季以後才開始出現', nw.length + '人', '滿12週者已穩定連結 ' + stab + '／' + done.length + '人']
   ];
   $('kpis').innerHTML = tiles.map(t => '<div class="kpi"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div><div class="s">' + t[2] + '</div></div>').join('');
 }
@@ -324,7 +324,7 @@ function renderFlow() {
   for (let i = 0; i < 4; i++) {
     const y0 = 4 + i * rowH, by = narrow ? y0 + 18 : y0;
     const up = M[i].slice(0, i).reduce((s, a) => s + a.length, 0), same = M[i][i].length, down = M[i].slice(i + 1).reduce((s, a) => s + a.length, 0);
-    const nNew = M[i].flat().filter(p => p.type === '年中開始出現').length;
+    const nNew = M[i].flat().filter(p => p.type === '本區間第二季以後才開始出現').length;
     const ly = narrow ? y0 + 12 : y0 + 20;
     s += '<rect x="0" y="' + (ly - 10) + '" width="10" height="10" rx="2" fill="' + lvColor(i) + '"/>';
     s += '<text x="14" y="' + ly + '" style="fill:var(--text)">' + SEG[0] + LV[i] + ' <tspan style="font-weight:700">' + tot[i] + '</tspan>人</text>';
@@ -341,7 +341,7 @@ function renderFlow() {
     if (i > 0) parts.push('往上 ' + up);
     parts.push('維持 ' + same);
     if (i < 3) parts.push('往下 ' + down);
-    s += '<text x="' + labW + '" y="' + (by + barH + 15) + '" style="font-size:12px">' + parts.join('｜') + (nNew ? '<tspan style="fill:var(--muted)">　（其中年中開始出現 ' + nNew + '人）</tspan>' : '') + '</text>';
+    s += '<text x="' + labW + '" y="' + (by + barH + 15) + '" style="font-size:12px">' + parts.join('｜') + (nNew ? '<tspan style="fill:var(--muted)">　（其中本區間第二季以後才開始出現 ' + nNew + '人）</tspan>' : '') + '</text>';
   }
   s += '</svg>';
   el.innerHTML = s; bindTips(el);
@@ -402,11 +402,11 @@ function renderDec() {
   $('decAll').querySelectorAll('[data-u]').forEach(c => c.onclick = () => { unit = c.dataset.u; renderAll(); if (c.dataset.t) { const b = document.querySelector('#dec .db[data-t="' + c.dataset.t + '"]'); b && b.onclick(); } });
 }
 
-/* ── 年中開始出現 ── */
+/* ── 本區間第二季以後才開始出現 ── */
 const NS = ['已穩定連結', '曾常來但近一個月沒來', '有再來但未穩定', '只來1～2次', '觀察中'];
 const NC = ['var(--s1)', 'var(--s4)', 'var(--s3)', 'var(--lv3)', 'var(--s7)'];
 function renderNew() {
-  const ps = PU().filter(p => p.type === '年中開始出現' && p.new), el = $('newc'), width = el.clientWidth || 500;
+  const ps = PU().filter(p => p.type === '本區間第二季以後才開始出現' && p.new), el = $('newc'), width = el.clientWidth || 500;
   $('newLegend').innerHTML = NS.map((n, i) => '<span><i style="background:' + NC[i] + '"></i>' + n + '</span>').join('');
   const groups = [['有小排或家聚會', ps.filter(p => p.new.gh === '有')], ['沒有', ps.filter(p => p.new.gh !== '有')]];
   const labW = 110, rowH = 46, height = rowH * 2 + 10, iw = width - labW - 10;
@@ -427,7 +427,7 @@ function renderNew() {
     s += '<text x="' + labW + '" y="' + (y + rowH - 2) + '" style="fill:var(--muted);font-size:11.5px">滿12週 ' + done.length + '人中已穩定連結 ' + st + '人' + (done.length ? '（' + Math.round(st / done.length * 100) + '％）' : '') + '</text>';
   });
   s += '</svg>';
-  el.innerHTML = ps.length ? s : '<div class="note">此單位沒有年中開始出現的人。</div>';
+  el.innerHTML = ps.length ? s : '<div class="note">此單位沒有本區間第二季以後才開始出現的人。</div>';
   bindTips(el);
   el.querySelectorAll('.nb').forEach(b => b.onclick = () => {
     const list = groups[+b.dataset.g][1].filter(p => p.new.status === b.dataset.s).sort((a, c) => a.new.first.localeCompare(c.new.first));

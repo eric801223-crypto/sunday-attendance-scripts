@@ -17,7 +17,7 @@ from collections import defaultdict
 
 import openpyxl
 
-TYPES = ['留住', '常來但近一個月沒來', '下滑', '淡出', '回升', '年中開始出現', '一直不常來']
+TYPES = ['留住', '常來但近一個月沒來', '下滑', '淡出', '回升', '本區間第二季以後才開始出現', '一直不常來']
 REGIONS = ['1小區', '2小區', '3小區', '4小區', '5小區', '6小區', '7小區', '青年區']
 UNITS = ['全會所'] + REGIONS + ['兒童', '青職', '大專']
 LEVELS = ['穩定', '普通', '不常來', '沒來']
@@ -103,8 +103,8 @@ def main(xlsx, out, care_x=None):
         if p['type'] not in TYPES:
             stop(f'{p["name"]} 的類型「{p["type"]}」不在預期類型中。')
 
-    # ── 年中開始出現 ──
-    wn = sheet(wb, '年中開始出現（內部）')
+    # ── 本區間第二季以後才開始出現 ──
+    wn = sheet(wb, '本區間第二季以後才開始出現（內部）')
     newc = {}
     for r in wn.iter_rows(min_row=5, values_only=True):
         if r[0] is None:
@@ -145,7 +145,7 @@ def main(xlsx, out, care_x=None):
     for u in UNITS:
         ps = [p for p in people if in_unit(p, u)]
         # 前後季對照摘要
-        # 左半部依等級計算（與 Excel 相同：年初常來＝第1段穩定或普通，含第1段已常來的年中開始出現者；
+        # 左半部依等級計算（與 Excel 相同：年初常來＝第1段穩定或普通；
         # 仍常來＋下滑＋淡出＝年初常來）；右半部依類型計算。
         common0 = [p for p in ps if level(p['s'][0]) in ('穩定', '普通')]
         calc = [len(common0),
@@ -154,7 +154,7 @@ def main(xlsx, out, care_x=None):
                 sum(1 for p in common0 if level(p['s'][3]) == '不常來'),
                 sum(1 for p in common0 if level(p['s'][3]) == '沒來'),
                 sum(1 for p in ps if p['type'] == '回升'),
-                sum(1 for p in ps if p['type'] == '年中開始出現'),
+                sum(1 for p in ps if p['type'] == '本區間第二季以後才開始出現'),
                 sum(1 for p in ps if p['type'] == '一直不常來')]
         xl = q_sum.get(u)
         if xl is None:
@@ -195,7 +195,7 @@ def main(xlsx, out, care_x=None):
 
     for p in people:
         k = (p['region'], p['name'])
-        if p['type'] == '年中開始出現' and k in newc:
+        if p['type'] == '本區間第二季以後才開始出現' and k in newc:
             p['new'] = newc[k]
 
     # ── 目前關心名單（選用）──

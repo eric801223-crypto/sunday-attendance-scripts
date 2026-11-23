@@ -21,7 +21,7 @@ KIDG = ("學齡前", "國小")
 CROSS = {"青職": "青職（跨區）", "大學": "大專（跨區）"}
 LV = ["穩定", "普通", "不常來", "沒來"]
 CH = {"穩定": "穩", "普通": "普", "不常來": "少", "沒來": "無"}
-TYPES = ["留住", "常來但近一個月沒來", "下滑", "淡出", "回升", "年中開始出現", "一直不常來"]
+TYPES = ["留住", "常來但近一個月沒來", "下滑", "淡出", "回升", "本區間第二季以後才開始出現", "一直不常來"]
 
 errors = []
 
@@ -114,10 +114,10 @@ def main():
         ls = [lv(x) for x in sc]
         f = v.index(1)
         r4 = sum(v[-4:])
-        new = f >= 8 and not any(int(r[j] or 0) for j in early)
+        new = f >= off + 12 and not any(int(r[j] or 0) for j in early)
         often = ("穩定", "普通")
         if new:
-            t = "年中開始出現"
+            t = "本區間第二季以後才開始出現"
         elif ls[-1] in often and r4 == 0:
             t = "常來但近一個月沒來"
         elif ls[0] in often:
@@ -254,7 +254,7 @@ def main():
         r = summ.get(u)
         tc = Counter(p["t"] for p in ps)
         want = [m["base"], m["kept"], m["away"], m["down"], m["fade"], round(m["kept"] / m["base"], 3) if m["base"] else None,
-                m["up"], tc["年中開始出現"], tc["一直不常來"]]
+                m["up"], tc["本區間第二季以後才開始出現"], tc["一直不常來"]]
         if r is None or list(r[1:10]) != want:
             err("年初年底對照 %s：輸出 %s，重算 %s" % (u, r and list(r[1:10]), want))
         i = block(cells, "【%s】" % u)
@@ -297,11 +297,11 @@ def main():
         if got != want:
             err("近一年概況 人數減少區名單不符（%d／%d）" % (sum(got.values()), sum(want.values())))
 
-    # 5 年中開始出現
-    out = Counter(tuple(r[:8]) for r in wb["年中開始出現（內部）"].iter_rows(min_row=5, values_only=True) if r[0])
+    # 5 本區間第二季以後才開始出現
+    out = Counter(tuple(r[:8]) for r in wb["本區間第二季以後才開始出現（內部）"].iter_rows(min_row=5, values_only=True) if r[0])
     exp = Counter((p["area"], "是" if p["kid"] else None, p["name"], p["grp"], yw[p["f"]][0].isoformat(), p["nn"], p["r4"], p["ns"]) for p in P if p["new"])
     if out != exp:
-        err("年中開始出現名單不符（%d／%d）" % (sum(out.values()), sum(exp.values())))
+        err("本區間第二季以後才開始出現名單不符（%d／%d）" % (sum(out.values()), sum(exp.values())))
 
     # 6 主日×小排家聚會
     if aux:
@@ -453,7 +453,7 @@ def main():
             bm("淡出：年初常來，年底都沒來"): [p["name"] for p in sorted([p for p in allp if p["t"] == "淡出"], key=kf)],
             "常來但近一個月都沒來": [p["name"] for p in sorted([p for p in allp if p["t"] == "常來但近一個月沒來"], key=kf)],
             "下滑，且近一個月都沒來": [p["name"] for p in sorted([p for p in allp if p["t"] == "下滑" and p["r4"] == 0], key=kf)],
-            "年中開始出現，曾常來但近一個月沒來": [p["name"] for p in sorted([p for p in allp if p["new"] and p["ns"] == "曾常來但近一個月沒來"], key=kf)],
+            "本區間第二季以後才開始出現，曾常來但近一個月沒來": [p["name"] for p in sorted([p for p in allp if p["new"] and p["ns"] == "曾常來但近一個月沒來"], key=kf)],
         }
         if aux:
             want["共"] = [z["name"] for z in NS if z["gq"] + z["hq"] >= 2]
@@ -463,7 +463,7 @@ def main():
                 err("重點摘要〔%s〕名單不符：應為 %s；實際 %s" % (label, "、".join(names) or "無", "、".join(got or []) or "無"))
         sec3 = hl.split("【三、")[1].split("【四、")[0] if "【三、" in hl else ""
         advice = {"一直不常來": "本來就不常來的人來得更少", "下滑": "年底變得不常來的人", "淡出": "年底都沒來的人",
-                  "常來但近一個月沒來": "近一個月都沒來的人", "年中開始出現": "之後沒有留下來", "留住": "固定來的人都來得少",
+                  "常來但近一個月沒來": "近一個月都沒來的人", "本區間第二季以後才開始出現": "之後沒有留下來", "留住": "固定來的人都來得少",
                   "回升": "回升的人又來得較少"}
         for ar in ADULT:
             a0, a1 = avg(U[ar], 0), avg(U[ar], K - 1)
@@ -498,7 +498,7 @@ def main():
         for e in errors[:40]:
             print("・" + e)
         sys.exit(1)
-    print("【回測通過】近一年主日%d次、%d段；分析對象%d人（兒童%d）；年中開始出現%d人；訊號%d項" % (
+    print("【回測通過】近一年主日%d次、%d段；分析對象%d人（兒童%d）；本區間第二季以後才開始出現%d人；訊號%d項" % (
         W, K, len(P), len(U["兒童"]), sum(1 for p in P if p["new"]), len(sig)))
 
 

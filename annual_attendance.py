@@ -40,19 +40,18 @@ SCOPE_NOTE = ("會所與各區人數不含訪客（姓名或欄位含來訪、�
               "與兒童（兒童專項，及各區群組為學齡前、國小者，含已得救小高）；兒童、訪客另列。")
 SEG = 12
 YEAR_DAYS = 364
-NEW_GAP = 8
 TIERS = ["穩定", "普通", "不常來", "沒來"]
 TIER_CH = {"穩定": "穩", "普通": "普", "不常來": "少", "沒來": "無"}
 OFTEN = ("穩定", "普通")
 TIER_NOTE = "穩定＝12週來9次以上、普通＝6～8次、不常來＝1～5次、沒來＝0次；常來＝穩定或普通"
-TYPES = ["留住", "常來但近一個月沒來", "下滑", "淡出", "回升", "年中開始出現", "一直不常來"]
+TYPES = ["留住", "常來但近一個月沒來", "下滑", "淡出", "回升", "本區間第二季以後才開始出現", "一直不常來"]
 TYPE_NOTE = OrderedDict([
     ("留住", "年初常來，年底仍常來，近一個月有來"),
     ("常來但近一個月沒來", "年底仍算常來（12週6次以上），但近一個月（4週）都沒來"),
     ("下滑", "年初常來，年底變不常來（1～5次）"),
     ("淡出", "年初常來，年底都沒來"),
     ("回升", "年初不常來或沒來，年底變常來，近一個月有來"),
-    ("年中開始出現", "近一年的前8週及報表更早週次都沒有出席，之後才第一次出席"),
+    ("本區間第二季以後才開始出現", "本區間第一季（第1段）及更早週次都沒有出席，第二季以後才第一次出席"),
     ("一直不常來", "年初、年底都是不常來或沒來"),
 ])
 NEW_STATUS = ["已穩定連結", "曾常來但近一個月沒來", "有再來但未穩定", "只來1～2次", "觀察中"]
@@ -65,7 +64,7 @@ SIG_FADE = 0.15
 SIG_MIN_BASE = 10
 LIMITS = [
     "報表是匯出當下的名單；年中已從系統刪除的人不在報表內，年初人數與流失可能被低估、留存率可能偏高。",
-    "年中遷入者會列在「年中開始出現」。",
+    "第二季以後遷入者會列在「本區間第二季以後才開始出現」；第一季遷入者照一般類型分類。",
     "點名漏登會被當成缺席。",
     "數字只用來提出值得了解的問題，不判定原因，不據以評價區、負責弟兄或個人。",
 ]
@@ -183,7 +182,7 @@ def load_aux(path, kind, ref_date, mons, sunday_total):
 def classify_type(tiers, r4, newcomer):
     t0, tl = tiers[0], tiers[-1]
     if newcomer:
-        return "年中開始出現"
+        return "本區間第二季以後才開始出現"
     if tl in OFTEN and r4 == 0:
         return "常來但近一個月沒來"
     if t0 in OFTEN:
@@ -239,7 +238,7 @@ def build(path, group=None, home=None):
         segs = [sum(seq[seg_start + i * SEG: seg_start + (i + 1) * SEG]) for i in range(nseg)]
         tiers = [tier(n) for n in segs]
         first = seq.index(1)
-        newcomer = first >= NEW_GAP and not any(int(r[j] or 0) for j in pre_cols)
+        newcomer = first >= seg_start + SEG and not any(int(r[j] or 0) for j in pre_cols)
         r4 = sum(seq[-4:])
         p = dict(name=name, area=a, group=grp, kid=(a == "兒童專項" or grp in KID_GROUPS), key=key,
                  seq=seq, segs=segs, tiers=tiers, r4=r4, type=classify_type(tiers, r4, newcomer), total=sum(seq),
@@ -489,7 +488,7 @@ def summary_text(res):
     L.append("・仍常來%d人（%s），其中近一個月都沒來%d人" % (mv["kept"], pct(mv["ret"]), mv["kept_away"]))
     L.append("・變不常來（下滑）%d人" % mv["down"])
     L.append("・都沒來（淡出）%d人" % mv["fade"])
-    L.append("年初不常來或沒來、年底變常來（回升，不含年中開始出現）：%d人" % mv["up"])
+    L.append("年初不常來或沒來、年底變常來（回升，不含本區間第二季以後才開始出現）：%d人" % mv["up"])
     L.append("每人一種類型：" + "、".join("%s%d人" % (t, mv["tc"][t]) for t in TYPES))
     L.append("")
     L.append("【三、各區比較】")
@@ -506,7 +505,7 @@ def summary_text(res):
         parts = "、".join("%s%+.1f" % (t, v) for t, v in c.items() if abs(v) >= 0.05)
         L.append("%s（%+.1f）：%s" % (a, tot, parts or "無變化"))
     L.append("")
-    L.append("【五、年中開始出現】")
+    L.append("【五、本區間第二季以後才開始出現】")
     nw = [p for p in U[ALL] if p["newcomer"]]
     nc = Counter(p["new_status"] for p in nw)
     L.append("共%d人：" % len(nw) + "、".join("%s%d人" % (st, nc[st]) for st in NEW_STATUS))
@@ -524,7 +523,7 @@ def summary_text(res):
         for flag, lab in ((1, "有"), (0, "沒有")):
             grp = [p for p in j if p["new_gh"] == flag]
             ok = sum(1 for p in grp if p["new_status"] == "已穩定連結")
-            L.append("年中開始出現、出現後12週%s小排或家聚會紀錄：%d人，其中已穩定連結%d人（%s）" % (lab, len(grp), ok, pct(ok / len(grp) if grp else None)))
+            L.append("本區間第二季以後才開始出現、出現後12週%s小排或家聚會紀錄：%d人，其中已穩定連結%d人（%s）" % (lab, len(grp), ok, pct(ok / len(grp) if grp else None)))
         L.append("")
     L.append("【待了解訊號】（只提出值得了解的地方，不代表原因或評價）")
     sig = signals(res)
@@ -633,7 +632,7 @@ SOURCE_ADVICE = OrderedDict([
     ("淡出", "減少最多來自原本常來、年底都沒來的人（淡出）。"),
     ("常來但近一個月沒來", "減少最多來自仍算常來、但近一個月都沒來的人。"),
     ("一直不常來", "減少最多來自本來就不常來的人來得更少（一直不常來）。"),
-    ("年中開始出現", "減少最多來自年初新出現、之後沒有留下來的人。"),
+    ("本區間第二季以後才開始出現", "減少最多來自第二季以後新出現、之後沒有留下來的人。"),
     ("留住", "減少最多來自固定來的人都來得少一些（留住）。"),
     ("回升", "減少最多來自回升的人又來得較少。"),
 ])
@@ -671,7 +670,7 @@ def highlights_text(res):
     nw = [p for p in U[ALL] if p["newcomer"]]
     judged = [p for p in nw if p["new_status"] != "觀察中"]
     ok = sum(1 for p in judged if p["new_status"] == "已穩定連結")
-    L.append("・年中開始出現%d人；出現滿12週的%d人中，已穩定連結%d人（%s）。" % (
+    L.append("・本區間第二季以後才開始出現%d人；出現滿12週的%d人中，已穩定連結%d人（%s）。" % (
         len(nw), len(judged), ok, pct(ok / len(judged) if judged else None)))
     L.append("")
 
@@ -721,7 +720,7 @@ def highlights_text(res):
         return "，年底小排家聚會%d週" % p["gh_segs"][-1]
 
     L.append("【五、建議優先聯絡（內部名單）】")
-    L.append("從「近一年出席觀察」內部名單【一】（下滑、淡出、常來但近一個月沒來）與年中開始出現的人當中，挑出最近一個月都沒來、需要主動聯絡的人。")
+    L.append("從「近一年出席觀察」內部名單【一】（下滑、淡出、常來但近一個月沒來）與本區間第二季以後才開始出現的人當中，挑出最近一個月都沒來、需要主動聯絡的人。")
     L.append("名單可能包含已遷出或應停用但系統尚未調整的人，發現時請自行略過。")
     n_down = sum(1 for p in U[ALL] + U[KIDS] if p["type"] == "下滑")
     blocks = [("淡出：年初常來，年底都沒來", fade, lambda p: "年初%d次→年底0次%s" % (p["segs"][0], gh(p)),
@@ -730,7 +729,7 @@ def highlights_text(res):
                "全部列出：斷掉的時間還短，最容易接住。"),
               ("下滑，且近一個月都沒來", down0, lambda p: "年初%d次→年底%d次%s" % (p["segs"][0], p["segs"][-1], gh(p)),
                "下滑共%d人，只列近一個月都沒來的%d人：近一個月還有來的人仍見得到面，可在聚會中關心，不必另外聯絡。" % (n_down, len(down0))),
-              ("年中開始出現，曾常來但近一個月沒來", new_away, lambda p: "出現後12週來%d次%s" % (p["new_n"], gh(p)),
+              ("本區間第二季以後才開始出現，曾常來但近一個月沒來", new_away, lambda p: "出現後12週來%d次%s" % (p["new_n"], gh(p)),
                "從新出現的人中挑出：才剛連上又斷了，最容易流失。")]
     for label, lst, desc, why in blocks:
         L.append("〔%s〕（%d人）%s" % (label, len(lst), why))
@@ -878,15 +877,15 @@ def write_excel(res, out_path, txt, highlights=""):
     # 3 前後季對照（取代原季度移動表）
     ws = wb.create_sheet(COMPARE_SHEET)
     ws["A1"] = "最早一季＝%s；最近一季＝%s。%s。" % (seg_label(res, 0), seg_label(res, nseg - 1), TIER_NOTE)
-    ws["A2"] = "看法：每一列是一個單位。左半部：年初常來的人，年底變成怎樣（仍常來＋下滑＋淡出＝年初常來）。右半部：年初不常來的人有多少變常來、年中才出現的人、一直不常來的人。"
+    ws["A2"] = "看法：每一列是一個單位。左半部：年初常來的人，年底變成怎樣（仍常來＋下滑＋淡出＝年初常來）。右半部：年初不常來的人有多少變常來、第二季以後才出現的人、一直不常來的人。"
     headers = ["單位", "年初常來", "年底仍常來", "其中近一個月都沒來", "年底變不常來（下滑）", "年底都沒來（淡出）",
-               "仍常來比例", "年初不常來、年底變常來（回升）", "年中開始出現", "一直不常來"]
+               "仍常來比例", "年初不常來、年底變常來（回升）", "本區間第二季以後才開始出現", "一直不常來"]
     rows = []
     for u, ps in U.items():
         mv = movement(ps)
         rows.append([u, mv["base"], mv["kept"], mv["kept_away"], mv["down"], mv["fade"],
                      (round(mv["ret"], 3) if mv["ret"] is not None else None), mv["up"],
-                     mv["tc"]["年中開始出現"], mv["tc"]["一直不常來"]])
+                     mv["tc"]["本區間第二季以後才開始出現"], mv["tc"]["一直不常來"]])
     end = table(ws, 4, headers, rows, [16, 10, 11, 12, 12, 12, 10, 14, 11, 11])
     for rr in range(5, end):
         ws.cell(row=rr, column=7).number_format = "0%"
@@ -916,9 +915,9 @@ def write_excel(res, out_path, txt, highlights=""):
     table(ws, 4, headers, prow, [10, 6, 20, 8] + [7] * nseg + [10, 7, 18, 9, 13] + [16] * len(aux_h) + [60])
     ws.freeze_panes = "D5"
 
-    # 5 年中開始出現（內部）
-    ws = wb.create_sheet("年中開始出現（內部）")
-    ws["A1"] = "內部參考。近一年的前8週及報表更早週次都沒有出席、之後才第一次出席者；可能是新人、遷入者或久未出席後回來的聖徒。"
+    # 5 本區間第二季以後才開始出現（內部）
+    ws = wb.create_sheet("本區間第二季以後才開始出現（內部）")
+    ws["A1"] = "內部參考。本區間第一季（第1段）及更早週次都沒有出席、第二季以後才第一次出席者；可能是新人、遷入者或久未出席後回來的聖徒。"
     ws["A2"] = NEW_NOTE
     aux_h = ["出現後12週小排或家聚會"] if res["aux"] else []
     headers = ["所屬區", "兒童", "姓名", "群組", "第一次出席", "出現後12週出席", "近4週", "狀態"] + aux_h
