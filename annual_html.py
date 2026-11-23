@@ -145,12 +145,14 @@ def main(xlsx, out, care_x=None):
     for u in UNITS:
         ps = [p for p in people if in_unit(p, u)]
         # 前後季對照摘要
-        common0 = [p for p in ps if level(p['s'][0]) in ('穩定', '普通') and p['type'] != '年中開始出現']
+        # 左半部依等級計算（與 Excel 相同：年初常來＝第1段穩定或普通，含第1段已常來的年中開始出現者；
+        # 仍常來＋下滑＋淡出＝年初常來）；右半部依類型計算。
+        common0 = [p for p in ps if level(p['s'][0]) in ('穩定', '普通')]
         calc = [len(common0),
                 sum(1 for p in common0 if level(p['s'][3]) in ('穩定', '普通')),
-                sum(1 for p in ps if p['type'] == '常來但近一個月沒來'),
-                sum(1 for p in ps if p['type'] == '下滑'),
-                sum(1 for p in ps if p['type'] == '淡出'),
+                sum(1 for p in common0 if level(p['s'][3]) in ('穩定', '普通') and p['n4'] == 0),
+                sum(1 for p in common0 if level(p['s'][3]) == '不常來'),
+                sum(1 for p in common0 if level(p['s'][3]) == '沒來'),
                 sum(1 for p in ps if p['type'] == '回升'),
                 sum(1 for p in ps if p['type'] == '年中開始出現'),
                 sum(1 for p in ps if p['type'] == '一直不常來')]

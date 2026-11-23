@@ -230,7 +230,7 @@ function decOf(ps) {
   return {a: a / 12, b: b / 12, d: (b - a) / 12, by};
 }
 function retention(ps) {
-  const c0 = ps.filter(p => isCommon(p.s[0]) && p.type !== '年中開始出現');
+  const c0 = ps.filter(p => isCommon(p.s[0]));  // 與 Excel 前後季對照相同：依第1段等級，含第1段已常來的年中開始出現者
   const kept = c0.filter(p => isCommon(p.s[3]));
   return {n: c0.length, k: kept.length};
 }
